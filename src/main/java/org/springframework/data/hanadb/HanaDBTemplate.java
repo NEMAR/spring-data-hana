@@ -23,6 +23,14 @@ import org.springframework.data.hanadb.converter.PointConverter;
 import org.springframework.data.hanadb.data.Point;
 import org.springframework.data.hanadb.query.HanaQuery;
 import org.springframework.data.hanadb.query.HanaQueryResult;
+import org.springframework.util.Assert;
+
+import javax.net.ssl.HttpsURLConnection;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -62,15 +70,39 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
   @Override
   public void write(final T payload)
   {
-    Preconditions.checkArgument(payload != null, "Parameter 'payload' must not be null");
-    final String database = getDatabase();
-    final String retentionPolicy = getRetentionPolicy();
-    final BatchPoints ops = BatchPoints.database(database)
-      .retentionPolicy(retentionPolicy)
-      .consistency(HanaDB.ConsistencyLevel.ALL)
-      .build();
-    converter.convert(payload).forEach(ops::point);
-    getConnection().write(ops);
+    Objects.requireNonNull(payload, "Parameter 'payload' must not be null");
+    Point data = converter.convert(payload);
+    final String hanaUrl = getConnectionFactory().getProperties().getUrl();
+    HttpURLConnection connection;
+    try {
+      if (hanaUrl.startsWith("http://")) {
+        connection = (HttpURLConnection) getConnection();
+      } else if (hanaUrl.startsWith("https://")) {
+        connection = (HttpsURLConnection) getConnection();
+      } else {
+        LOGGER.error("Given hana URL is neither https nor http.\nCan not write data!");
+        throw new IllegalStateException("Given hana URL is neither https nor http");
+      }
+      connection.setRequestMethod("POST");
+      connection.setRequestProperty("Authorization", getConnectionFactory().getProperties().getAuthorizationHeader());
+      connection.setDoOutput(true);
+
+      try (OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream())) {
+        // this call appends the json result to the output stream
+        gson.toJson(data, Point.class, out);
+        out.flush();
+      }
+
+      int responseCode = connection.getResponseCode();
+      String response;
+      try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+        response = reader.lines().collect(Collectors.joining(System.lineSeparator()));
+      }
+      LOGGER.info("Status {}, Response {}", responseCode, response);
+    } catch (IOException e) {
+      LOGGER.warn("Something went wrong when writing payload.");
+      LOGGER.debug("Debug information:", e);
+    }
   }
 
   @Override

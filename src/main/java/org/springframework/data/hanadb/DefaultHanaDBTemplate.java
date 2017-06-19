@@ -16,7 +16,7 @@
 
 package org.springframework.data.hanadb;
 
-import org.springframework.data.hanadb.converter.PointConverter;
+import org.springframework.data.hanadb.data.Point;
 
 public class DefaultHanaDBTemplate extends HanaDBTemplate<Point>
 {
@@ -27,6 +27,6 @@ public class DefaultHanaDBTemplate extends HanaDBTemplate<Point>
 
   public DefaultHanaDBTemplate(final HanaDBConnectionFactory connectionFactory)
   {
-    super(connectionFactory, new PointConverter());
+    super(connectionFactory, point -> point);
   }
 }
