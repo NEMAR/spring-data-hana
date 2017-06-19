@@ -25,15 +25,14 @@ import org.springframework.data.hanadb.query.HanaQuery;
 import org.springframework.data.hanadb.query.HanaQueryResult;
 import org.springframework.util.Assert;
 
-import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperations<T>
@@ -48,9 +47,9 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
 
   }
 
-  public HanaDBTemplate(final HanaDBConnectionFactory connectionFactory, final PointConverter<T> converter)
+  public HanaDBTemplate(final HanaDBProperties properties, final PointConverter<T> converter)
   {
-    setConnectionFactory(connectionFactory);
+    setProperties(properties);
     setConverter(converter);
   }
 
@@ -72,19 +71,11 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
   {
     Objects.requireNonNull(payload, "Parameter 'payload' must not be null");
     Point data = converter.convert(payload);
-    final String hanaUrl = getConnectionFactory().getProperties().getUrl();
-    HttpURLConnection connection;
+    final String hanaUrl = getProperties().getUrl() + getProperties().getWriteEndpoint();
     try {
-      if (hanaUrl.startsWith("http://")) {
-        connection = (HttpURLConnection) getConnection();
-      } else if (hanaUrl.startsWith("https://")) {
-        connection = (HttpsURLConnection) getConnection();
-      } else {
-        LOGGER.error("Given hana URL is neither https nor http.\nCan not write data!");
-        throw new IllegalStateException("Given hana URL is neither https nor http");
-      }
+      HttpURLConnection connection = (HttpURLConnection) new URL(hanaUrl).openConnection();
       connection.setRequestMethod("POST");
-      connection.setRequestProperty("Authorization", getConnectionFactory().getProperties().getAuthorizationHeader());
+      connection.setRequestProperty("Authorization", getProperties().getAuthorizationHeader());
       connection.setDoOutput(true);
 
       try (OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream())) {
@@ -113,11 +104,6 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
 
   @Override
   public HanaQueryResult query(HanaQuery query) {
-    return null;
-  }
-
-  @Override
-  public HanaQueryResult query(HanaQuery query, TimeUnit timeUnit) {
     return null;
   }
 }

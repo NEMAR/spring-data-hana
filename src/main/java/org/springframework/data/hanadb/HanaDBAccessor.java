@@ -21,42 +21,23 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.util.Assert;
 
-import java.net.URLConnection;
-
 public class HanaDBAccessor implements InitializingBean
 {
-  protected final Logger logger = LoggerFactory.getLogger(getClass());
+  protected static final Logger LOGGER = LoggerFactory.getLogger(HanaDBAccessor.class);
 
-  private HanaDBConnectionFactory connectionFactory;
+  private HanaDBProperties properties;
 
-  /**
-   * Returns the connection factory.
-   *
-   * @return Returns the connection factory
-   */
-  public HanaDBConnectionFactory getConnectionFactory()
-  {
-    return connectionFactory;
+  public HanaDBProperties getProperties() {
+    return properties;
   }
 
-  /**
-   * Sets the connection factory.
-   *
-   * @param connectionFactory The connection factory to set
-   */
-  public void setConnectionFactory(final HanaDBConnectionFactory connectionFactory)
-  {
-    this.connectionFactory = connectionFactory;
-  }
-
-  public URLConnection getConnection()
-  {
-    return getConnectionFactory().getConnection();
+  public void setProperties(HanaDBProperties properties) {
+    this.properties = properties;
   }
 
   @Override
   public void afterPropertiesSet()
   {
-    Assert.notNull(getConnectionFactory(), "HanaDBConnectionFactory is required");
+    Assert.notNull(getProperties(), "HanaDBConnectionFactory is required");
   }
 }

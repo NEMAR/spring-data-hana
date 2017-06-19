@@ -26,6 +26,15 @@ public class HanaDBProperties
   private String url;
 
   @NotEmpty
+  private String writeEndpoint;
+
+  @NotEmpty
+  private String dataEndpoint;
+
+  @NotEmpty
+  private String statsEndpoint;
+
+  @NotEmpty
   private String authorizationHeader;
 
 
@@ -47,9 +56,33 @@ public class HanaDBProperties
     this.authorizationHeader = authorizationHeader;
   }
 
+  public String getWriteEndpoint() {
+    return writeEndpoint;
+  }
+
   @Override
   public String toString()
   {
     return String.format("url: %s, authToken not included", url);
+  }
+
+  public void setWriteEndpoint(String writeEndpoint) {
+    this.writeEndpoint = writeEndpoint;
+  }
+
+  public String getDataEndpoint() {
+    return dataEndpoint;
+  }
+
+  public void setDataEndpoint(String dataEndpoint) {
+    this.dataEndpoint = dataEndpoint;
+  }
+
+  public String getStatsEndpoint() {
+    return statsEndpoint;
+  }
+
+  public void setStatsEndpoint(String statsEndpoint) {
+    this.statsEndpoint = statsEndpoint;
   }
 }

@@ -2,3 +2,6 @@ spring:
   hanadb:
     url: http://127.0.0.1
     authorization-header: basic authToken==
+    write-endpoint: SensorData
+    stats-endpoint: SensorStats
+    data-endpoint: RawSensorData

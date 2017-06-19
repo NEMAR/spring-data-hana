@@ -46,13 +46,4 @@ public interface HanaDBOperations<T>
    * @return a List of time series data matching the query
    */
   HanaQueryResult query(final HanaQuery query);
-
-  /**
-   * Executes a query agains the database.
-   *
-   * @param query    the query to execute
-   * @param timeUnit the time unit to be used for the query
-   * @return a List of time series data matching the query
-   */
-  HanaQueryResult query(final HanaQuery query, final TimeUnit timeUnit);
 }

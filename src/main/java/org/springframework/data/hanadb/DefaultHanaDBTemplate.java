@@ -25,8 +25,8 @@ public class DefaultHanaDBTemplate extends HanaDBTemplate<Point>
 
   }
 
-  public DefaultHanaDBTemplate(final HanaDBConnectionFactory connectionFactory)
+  public DefaultHanaDBTemplate(final HanaDBProperties properties)
   {
-    super(connectionFactory, point -> point);
+    super(properties, point -> point);
   }
 }
