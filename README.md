@@ -11,7 +11,7 @@ The primary goal of the [Spring Data](http://projects.spring.io/spring-data/) pr
 ```xml
 <dependency>
   <groupId>com.github.vogel612</groupId>
-  <artifactId>spring-data-hana</artifactId>
+  <artifactId>spring-data-hanadb</artifactId>
   <version>1.5</version>
 </dependency>
 ```
@@ -23,11 +23,8 @@ The primary goal of the [Spring Data](http://projects.spring.io/spring-data/) pr
     ```yml
     spring:
       hana:
-        url: http://localhost:8086
-        username: user
-        password: ~
-        database: test
-        retention-policy: autogen
+        url: http://localhost/endpoint
+        authorization-header: basic authenticationToken==
     ```
 
 * Create `HanaDBConnectionFactory` and `HanaDBTemplate` beans:
@@ -71,12 +68,9 @@ The primary goal of the [Spring Data](http://projects.spring.io/spring-data/) pr
     @Autowired
     private HanaDBTemplate<Point> hanaDBTemplate;
 
-    hanaDBTemplate.createDatabase();
-    final Point p = Point.measurement("disk")
-      .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-      .tag("tenant", "default")
-      .addField("used", 80L)
-      .addField("free", 1L)
+    final Point p = Point.timeseries("disk")
+      .time(System.currentTimeMillis())
+      .value(12.25)
       .build();
     hanaDBTemplate.write(p);
     ```
