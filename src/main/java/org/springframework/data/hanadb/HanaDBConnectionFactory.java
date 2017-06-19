@@ -21,11 +21,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.util.Assert;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+
 public class HanaDBConnectionFactory implements InitializingBean
 {
   private static Logger logger = LoggerFactory.getLogger(HanaDBConnectionFactory.class);
 
-  private HanaDB connection;
+  private URLConnection connection;
 
   private HanaDBProperties properties;
 
@@ -39,13 +45,17 @@ public class HanaDBConnectionFactory implements InitializingBean
     this.properties = properties;
   }
 
-  public HanaDB getConnection()
+  public URLConnection getConnection()
   {
     Assert.notNull(getProperties(), "HanaDBProperties are required");
     if (connection == null)
     {
-      connection = HanaDBFactory.connect(properties.getUrl(), properties.getUsername(), properties.getPassword());
-      logger.debug("Using HanaDB '{}' on '{}'", properties.getDatabase(), properties.getUrl());
+      try {
+        connection = new URL(properties.getUrl()).openConnection();
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+      logger.debug("Using HanaDB at '{}'", properties.getUrl());
     }
     return connection;
   }

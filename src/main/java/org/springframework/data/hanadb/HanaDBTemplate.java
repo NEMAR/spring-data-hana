@@ -19,6 +19,10 @@ package org.springframework.data.hanadb;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.hanadb.converter.PointConverter;
+import org.springframework.data.hanadb.data.Point;
+import org.springframework.data.hanadb.query.HanaQuery;
+import org.springframework.data.hanadb.query.HanaQueryResult;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -36,14 +40,14 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
 
   }
 
-  public HanaDBTemplate(final HanaDBConnectionFactory connectionFactory, final PointCollectionConverter<T> converter)
+  public HanaDBTemplate(final HanaDBConnectionFactory connectionFactory, final PointConverter<T> converter)
   {
     setConnectionFactory(connectionFactory);
     setConverter(converter);
   }
 
 
-  public void setConverter(final PointCollectionConverter<T> converter)
+  public void setConverter(final PointConverter<T> converter)
   {
     this.converter = converter;
   }
@@ -52,14 +56,7 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
   public void afterPropertiesSet()
   {
     super.afterPropertiesSet();
-    Assert.notNull(converter, "PointCollectionConverter is required");
-  }
-
-  @Override
-  public void createDatabase()
-  {
-    final String database = getDatabase();
-    getConnection().createDatabase(database);
+    Assert.notNull(converter, "PointConverter is required");
   }
 
   @Override
@@ -79,38 +76,16 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
   @Override
   public void write(final List<T> payload)
   {
-    Preconditions.checkArgument(payload != null, "Parameter 'payload' must not be null");
-    final String database = getDatabase();
-    final String retentionPolicy = getConnectionFactory().getProperties().getRetentionPolicy();
-    final BatchPoints ops = BatchPoints.database(database)
-      .retentionPolicy(retentionPolicy)
-      .consistency(HanaDB.ConsistencyLevel.ALL)
-      .build();
-    payload.forEach(t -> converter.convert(t).forEach(ops::point));
-    getConnection().write(ops);
+    payload.forEach(this::write);
   }
 
   @Override
-  public QueryResult query(final Query query)
-  {
-    return getConnection().query(query);
+  public HanaQueryResult query(HanaQuery query) {
+    return null;
   }
 
   @Override
-  public QueryResult query(final Query query, final TimeUnit timeUnit)
-  {
-    return getConnection().query(query, timeUnit);
-  }
-
-  @Override
-  public Pong ping()
-  {
-    return getConnection().ping();
-  }
-
-  @Override
-  public String version()
-  {
-    return getConnection().version();
+  public HanaQueryResult query(HanaQuery query, TimeUnit timeUnit) {
+    return null;
   }
 }

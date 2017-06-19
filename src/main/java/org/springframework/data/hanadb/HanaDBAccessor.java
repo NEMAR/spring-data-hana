@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.util.Assert;
 
+import java.net.URLConnection;
+
 public class HanaDBAccessor implements InitializingBean
 {
   protected final Logger logger = LoggerFactory.getLogger(getClass());
@@ -47,17 +49,7 @@ public class HanaDBAccessor implements InitializingBean
     this.connectionFactory = connectionFactory;
   }
 
-  public String getDatabase()
-  {
-    return getConnectionFactory().getProperties().getDatabase();
-  }
-
-  public String getRetentionPolicy()
-  {
-    return getConnectionFactory().getProperties().getRetentionPolicy();
-  }
-
-  public HanaDB getConnection()
+  public URLConnection getConnection()
   {
     return getConnectionFactory().getConnection();
   }

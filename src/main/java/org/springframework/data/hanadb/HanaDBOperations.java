@@ -16,15 +16,14 @@
 
 package org.springframework.data.hanadb;
 
+import org.springframework.data.hanadb.query.HanaQuery;
+import org.springframework.data.hanadb.query.HanaQueryResult;
+
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public interface HanaDBOperations<T>
 {
-  /**
-   * Ensures that the configured database exists.
-   */
-  void createDatabase();
 
   /**
    * Write a single measurement to the database.
@@ -46,7 +45,7 @@ public interface HanaDBOperations<T>
    * @param query the query to execute
    * @return a List of time series data matching the query
    */
-  QueryResult query(final Query query);
+  HanaQueryResult query(final HanaQuery query);
 
   /**
    * Executes a query agains the database.
@@ -55,19 +54,5 @@ public interface HanaDBOperations<T>
    * @param timeUnit the time unit to be used for the query
    * @return a List of time series data matching the query
    */
-  QueryResult query(final Query query, final TimeUnit timeUnit);
-
-  /**
-   * Ping the database.
-   *
-   * @return the response of the ping execution
-   */
-  Pong ping();
-
-  /**
-   * Return the version of the connected database.
-   *
-   * @return the version String, otherwise unknown
-   */
-  String version();
+  HanaQueryResult query(final HanaQuery query, final TimeUnit timeUnit);
 }

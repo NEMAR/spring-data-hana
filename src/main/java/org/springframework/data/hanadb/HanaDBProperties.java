@@ -26,15 +26,8 @@ public class HanaDBProperties
   private String url;
 
   @NotEmpty
-  private String username;
+  private String authorizationHeader;
 
-  private String password;
-
-  @NotEmpty
-  private String database;
-
-  @NotEmpty
-  private String retentionPolicy;
 
   public String getUrl()
   {
