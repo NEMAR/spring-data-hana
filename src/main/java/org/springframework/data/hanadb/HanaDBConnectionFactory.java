@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,15 +23,12 @@ import org.springframework.util.Assert;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 
 public class HanaDBConnectionFactory implements InitializingBean
 {
   private static Logger logger = LoggerFactory.getLogger(HanaDBConnectionFactory.class);
-
-  private URLConnection connection;
 
   private HanaDBProperties properties;
 
@@ -48,16 +45,12 @@ public class HanaDBConnectionFactory implements InitializingBean
   public URLConnection getConnection()
   {
     Assert.notNull(getProperties(), "HanaDBProperties are required");
-    if (connection == null)
-    {
-      try {
-        connection = new URL(properties.getUrl()).openConnection();
-      } catch (IOException e) {
-        throw new UncheckedIOException(e);
-      }
-      logger.debug("Using HanaDB at '{}'", properties.getUrl());
+    try {
+      logger.debug("Opening connection to HanaDB at '{}'", properties.getUrl());
+      return new URL(properties.getUrl()).openConnection();
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
     }
-    return connection;
   }
 
   /**
