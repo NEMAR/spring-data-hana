@@ -16,15 +16,20 @@
 
 package org.springframework.data.hanadb;
 
-import com.google.common.base.Preconditions;
+import com.google.gson.Gson;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import org.springframework.data.hanadb.converter.PointCollectionConverter;
-import org.springframework.util.Assert;
+import java.util.stream.Collectors;
 
 public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperations<T>
 {
-  private PointCollectionConverter<T> converter;
+  private static final Logger LOGGER = LoggerFactory.getLogger(HanaDBTemplate.class);
+
+  private PointConverter<T> converter;
+  private final Gson gson = new Gson();
 
   public HanaDBTemplate()
   {

@@ -16,7 +16,6 @@
 
 package org.springframework.data.hanadb;
 
-import com.google.common.base.MoreObjects;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -47,55 +46,17 @@ public class HanaDBProperties
     this.url = url;
   }
 
-  public String getUsername()
-  {
-    return username;
+  public String getAuthorizationHeader() {
+    return authorizationHeader;
   }
 
-  public void setUsername(final String username)
-  {
-    this.username = username;
-  }
-
-  public String getPassword()
-  {
-    return password;
-  }
-
-  public void setPassword(final String password)
-  {
-    this.password = password;
-  }
-
-  public String getDatabase()
-  {
-    return database;
-  }
-
-  public void setDatabase(final String database)
-  {
-    this.database = database;
-  }
-
-  public String getRetentionPolicy()
-  {
-    return retentionPolicy;
-  }
-
-  public void setRetentionPolicy(final String retentionPolicy)
-  {
-    this.retentionPolicy = retentionPolicy;
+  public void setAuthorizationHeader(String authorizationHeader) {
+    this.authorizationHeader = authorizationHeader;
   }
 
   @Override
   public String toString()
   {
-    return MoreObjects.toStringHelper(this)
-      .add("url", url)
-      .add("username", username)
-      .add("password", password)
-      .add("database", database)
-      .add("retentionPolicy", retentionPolicy)
-      .toString();
+    return String.format("url: %s, authToken not included", url);
   }
 }
