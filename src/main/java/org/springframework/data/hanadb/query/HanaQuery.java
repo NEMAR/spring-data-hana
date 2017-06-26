@@ -17,4 +17,46 @@
 package org.springframework.data.hanadb.query;
 
 public class HanaQuery {
+
+    private final boolean raw;
+    private final String queryText;
+
+    private HanaQuery(HanaQuery.Builder builder) {
+        this.raw = builder.raw;
+        this.queryText = builder.queryText;
+    }
+
+    public class Builder {
+
+        private boolean raw;
+        private String queryText;
+        public Builder() {
+        }
+
+        public Builder raw(boolean value) {
+            this.raw = value;
+            return this;
+        }
+
+        public Builder text(String queryText) {
+            this.queryText = queryText;
+            return this;
+        }
+
+        public HanaQuery build() {
+            if (queryText == null) {
+                throw new IllegalStateException("We do actually need a query text");
+            }
+            return new HanaQuery(this);
+        }
+
+    }
+
+    public String getQueryText() {
+        return queryText;
+    }
+
+    public boolean isRaw() {
+        return raw;
+    }
 }

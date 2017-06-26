@@ -30,80 +30,109 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.URL;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperations<T>
-{
-  private static final Logger LOGGER = LoggerFactory.getLogger(HanaDBTemplate.class);
+public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperations<T> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HanaDBTemplate.class);
 
-  private PointConverter<T> converter;
-  private final Gson gson = new Gson();
+    private PointConverter<T> converter;
+    private final Gson gson = new Gson();
 
-  public HanaDBTemplate()
-  {
+    public HanaDBTemplate() {
 
-  }
-
-  public HanaDBTemplate(final HanaDBProperties properties, final PointConverter<T> converter)
-  {
-    setProperties(properties);
-    setConverter(converter);
-  }
-
-
-  public void setConverter(final PointConverter<T> converter)
-  {
-    this.converter = converter;
-  }
-
-  @Override
-  public void afterPropertiesSet()
-  {
-    super.afterPropertiesSet();
-    Assert.notNull(converter, "PointConverter is required");
-  }
-
-  @Override
-  public void write(final T payload)
-  {
-    Objects.requireNonNull(payload, "Parameter 'payload' must not be null");
-    Point data = converter.convert(payload);
-    final String hanaUrl = getProperties().getUrl() + getProperties().getWriteEndpoint();
-    try {
-      HttpURLConnection connection = (HttpURLConnection) new URL(hanaUrl).openConnection();
-      connection.setRequestMethod("POST");
-      connection.setRequestProperty("Authorization", getProperties().getAuthorizationHeader());
-      connection.setDoOutput(true);
-
-      try (OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream())) {
-        // this call appends the json result to the output stream
-        gson.toJson(data, Point.class, out);
-        out.flush();
-      }
-
-      int responseCode = connection.getResponseCode();
-      String response;
-      try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-        response = reader.lines().collect(Collectors.joining(System.lineSeparator()));
-      }
-      LOGGER.info("Status {}, Response {}", responseCode, response);
-    } catch (IOException e) {
-      LOGGER.warn("Something went wrong when writing payload.");
-      LOGGER.debug("Debug information:", e);
     }
-  }
 
-  @Override
-  public void write(final List<T> payload)
-  {
-    payload.forEach(this::write);
-  }
+    public HanaDBTemplate(final HanaDBProperties properties, final PointConverter<T> converter) {
+        setProperties(properties);
+        setConverter(converter);
+    }
 
-  @Override
-  public HanaQueryResult query(HanaQuery query) {
-    return null;
-  }
+
+    public void setConverter(final PointConverter<T> converter) {
+        this.converter = converter;
+    }
+
+    @Override
+    public void afterPropertiesSet() {
+        super.afterPropertiesSet();
+        Assert.notNull(converter, "PointConverter is required");
+    }
+
+    @Override
+    public void write(final T payload) {
+        Objects.requireNonNull(payload, "Parameter 'payload' must not be null");
+        HttpURLConnection connection = null;
+        try {
+            final String hanaUrl = getProperties().getUrl() + getProperties().getWriteEndpoint();
+            connection = (HttpURLConnection) new URL(hanaUrl).openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Authorization", getProperties().getAuthorizationHeader());
+            connection.setDoOutput(true);
+
+            connection.connect();
+
+            try (OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream())) {
+                // this call appends the json result to the output stream
+                Point data = converter.convert(payload);
+                gson.toJson(data, Point.class, out);
+                out.flush();
+            }
+
+            int responseCode = connection.getResponseCode();
+            String response;
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+                response = reader.lines().collect(Collectors.joining(System.lineSeparator()));
+            }
+            LOGGER.info("Status {}, Response {}", responseCode, response);
+        } catch (IOException e) {
+            LOGGER.warn("Something went wrong when writing payload.");
+            LOGGER.debug("Debug information:", e);
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    @Override
+    public void write(final List<T> payload) {
+        payload.forEach(this::write);
+    }
+
+    @Override
+    public HanaQueryResult query(HanaQuery query) {
+        Objects.requireNonNull(query, "Query must not be null");
+
+        HttpURLConnection connection = null;
+        try {
+            String url = getProperties().getUrl() + (query.isRaw() ? "Raw" : "") + getProperties().getDataEndpoint();
+            connection = (HttpURLConnection) new URL(url).openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Authorization", getProperties().getAuthorizationHeader());
+
+            connection.connect();
+
+            int code = connection.getResponseCode();
+            String response;
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+                response = reader.lines().collect(Collectors.joining(System.lineSeparator()));
+            }
+            LOGGER.info("Query: Status {}, Response {}", code, response);
+            return gson.fromJson(response, HanaQueryResult.class);
+
+        } catch (IOException e) {
+            LOGGER.warn("Something went really wrong when executing a query: {}");
+            LOGGER.debug("Debug information. {}", e);
+            return HanaQueryResult.EMPTY;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
 }

@@ -16,5 +16,57 @@
 
 package org.springframework.data.hanadb.query;
 
+import com.google.gson.annotations.SerializedName;
+
+import java.math.BigDecimal;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 public class HanaQueryResult {
+
+    public static HanaQueryResult EMPTY = new HanaQueryResult(new ResultContainer(Collections.emptyList()));
+
+    private HanaQueryResult(ResultContainer container){
+        this.resultContainer = container;
+    }
+
+    @SerializedName("d")
+    private ResultContainer resultContainer;
+
+    private static class ResultContainer {
+        @SerializedName("results")
+        private List<Entry> entries;
+
+        private ResultContainer(List<Entry> results) {
+            this.entries = results;
+        }
+    }
+
+    public List<HanaQueryResult.Entry> results() {
+        return resultContainer.entries;
+    }
+
+    private static class Entry {
+        @SerializedName("__metadata")
+        private Entry.Metadata metadata;
+        @SerializedName("ZEITREIHE")
+        private String zeitreihe;
+        @SerializedName("VALUE")
+        private BigDecimal value;
+        @SerializedName("TIME")
+        private String time;
+        @SerializedName("GREGORIAN_DATE")
+        private Calendar date;
+        @SerializedName("RECEIVED")
+        private Calendar received;
+
+        private static class Metadata {
+            @SerializedName("type")
+            private String type;
+            @SerializedName("url")
+            private String url;
+        }
+    }
 }
