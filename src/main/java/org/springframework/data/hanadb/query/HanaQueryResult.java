@@ -16,11 +16,11 @@
 
 package org.springframework.data.hanadb.query;
 
+import com.google.common.base.MoreObjects;
 import com.google.gson.annotations.SerializedName;
 
 import java.math.BigDecimal;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,7 +28,7 @@ public class HanaQueryResult {
 
     public static HanaQueryResult EMPTY = new HanaQueryResult(new ResultContainer(Collections.emptyList()));
 
-    private HanaQueryResult(ResultContainer container){
+    private HanaQueryResult(ResultContainer container) {
         this.resultContainer = container;
     }
 
@@ -36,14 +36,19 @@ public class HanaQueryResult {
     private ResultContainer resultContainer;
 
     private static class ResultContainer {
+
         @SerializedName("results")
         private List<Entry> entries;
-
         private ResultContainer(List<Entry> results) {
             this.entries = results;
         }
-    }
 
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this).addValue(entries).toString();
+        }
+
+    }
     public List<HanaQueryResult.Entry> results() {
         return resultContainer.entries;
     }
@@ -61,12 +66,35 @@ public class HanaQueryResult {
         private Calendar date;
         @SerializedName("RECEIVED")
         private Calendar received;
-
         private static class Metadata {
+
             @SerializedName("type")
             private String type;
             @SerializedName("url")
             private String url;
+            @Override
+            public String toString() {
+                return MoreObjects.toStringHelper(this)
+                        .add("type", type)
+                        .add("url", url)
+                        .toString();
+            }
         }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("metadata", metadata)
+                    .add("zeitreihe", zeitreihe)
+                    .add("value", value)
+                    .add("time", time)
+                    .add("date", date)
+                    .add("received", received)
+                    .toString();
+        }
+    }
+    @Override
+    public String toString() {
+        return resultContainer.toString();
     }
 }
