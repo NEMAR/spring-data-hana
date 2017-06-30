@@ -26,7 +26,7 @@ public class HanaQuery {
         this.queryText = builder.queryText;
     }
 
-    public class Builder {
+    public static class Builder {
 
         private boolean raw;
         private String queryText;

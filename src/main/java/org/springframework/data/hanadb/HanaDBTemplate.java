@@ -29,10 +29,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.net.URL;
+import java.net.*;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -68,7 +65,7 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
         Objects.requireNonNull(payload, "Parameter 'payload' must not be null");
         HttpURLConnection connection = null;
         try {
-            final String hanaUrl = getProperties().getUrl() + getProperties().getWriteEndpoint();
+            final String hanaUrl = getProperties().getUrl() + getProperties().getWriteEndpoint() + "?format=json";
             connection = (HttpURLConnection) new URL(hanaUrl).openConnection();
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Authorization", getProperties().getAuthorizationHeader());
@@ -91,7 +88,7 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
             LOGGER.info("Status {}, Response {}", responseCode, response);
         } catch (IOException e) {
             LOGGER.warn("Something went wrong when writing payload.");
-            LOGGER.debug("Debug information:", e);
+            LOGGER.warn("Debug information:", e);
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -110,7 +107,7 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
 
         HttpURLConnection connection = null;
         try {
-            String url = getProperties().getUrl() + (query.isRaw() ? "Raw" : "") + getProperties().getDataEndpoint();
+            String url = getProperties().getUrl() + (query.isRaw() ? "Raw" : "") + getProperties().getDataEndpoint() + "?$format=JSON" + (query.getQueryText().startsWith("&") ? "" : "&") + query.getQueryText();
             connection = (HttpURLConnection) new URL(url).openConnection();
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Authorization", getProperties().getAuthorizationHeader());
@@ -127,7 +124,7 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
 
         } catch (IOException e) {
             LOGGER.warn("Something went really wrong when executing a query: {}");
-            LOGGER.debug("Debug information. {}", e);
+            LOGGER.warn("Debug information. {}", e);
             return HanaQueryResult.EMPTY;
         } finally {
             if (connection != null) {

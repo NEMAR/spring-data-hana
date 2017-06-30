@@ -19,12 +19,14 @@ package org.springframework.data.hanadb;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 
 public class HanaDBAccessor implements InitializingBean
 {
   protected static final Logger LOGGER = LoggerFactory.getLogger(HanaDBAccessor.class);
 
+  @Autowired
   private HanaDBProperties properties;
 
   public HanaDBProperties getProperties() {
@@ -38,6 +40,6 @@ public class HanaDBAccessor implements InitializingBean
   @Override
   public void afterPropertiesSet()
   {
-    Assert.notNull(getProperties(), "HanaDBConnectionFactory is required");
+    Assert.notNull(getProperties(), "HanaDBProperties are required");
   }
 }
