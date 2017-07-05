@@ -40,6 +40,6 @@ public class HanaDBAccessor implements InitializingBean
   @Override
   public void afterPropertiesSet()
   {
-    Assert.notNull(getProperties(), "HanaDBProperties are required");
+    Assert.notNull(properties, "HanaDBProperties are required");
   }
 }

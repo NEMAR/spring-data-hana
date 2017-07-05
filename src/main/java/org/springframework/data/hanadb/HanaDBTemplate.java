@@ -16,7 +16,7 @@
 
 package org.springframework.data.hanadb;
 
-import com.google.gson.Gson;
+import com.google.gson.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.hanadb.converter.PointConverter;
@@ -24,12 +24,16 @@ import org.springframework.data.hanadb.data.Point;
 import org.springframework.data.hanadb.query.HanaQuery;
 import org.springframework.data.hanadb.query.HanaQueryResult;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
+import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.Type;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -38,13 +42,24 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
     private static final Logger LOGGER = LoggerFactory.getLogger(HanaDBTemplate.class);
 
     private PointConverter<T> converter;
-    private final Gson gson = new Gson();
+    private final Gson gson;
 
     public HanaDBTemplate() {
-
+        GsonBuilder builder = new GsonBuilder();
+        builder.registerTypeAdapter(Point.class, (JsonSerializer<Point>)(Point src, Type type, JsonSerializationContext context) -> {
+            JsonObject obj = new JsonObject();
+            // serialize it all to strings for reasons..
+            obj.addProperty("ZEITREIHE", src.getTimeseries());
+            obj.addProperty("TIME", String.valueOf(src.getTimestamp()));
+            obj.addProperty("VALUE", src.getValue().toString());
+            return obj;
+        });
+        gson = builder.create();
     }
 
     public HanaDBTemplate(final HanaDBProperties properties, final PointConverter<T> converter) {
+        this();
+
         setProperties(properties);
         setConverter(converter);
     }
@@ -58,6 +73,13 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
     public void afterPropertiesSet() {
         super.afterPropertiesSet();
         Assert.notNull(converter, "PointConverter is required");
+
+        if (StringUtils.hasText(getProperties().getTrustStore().getLocation())) {
+            System.setProperty("javax.net.ssl.trustStore", getProperties().getTrustStore().getLocation());
+            System.setProperty("javax.net.ssl.trustStorePassword", getProperties().getTrustStore().getPassword());
+        }
+        // FIXME setting an all-trusting hostname verifier is a really fucking stupid idea, but hey
+        HttpsURLConnection.setDefaultHostnameVerifier((a, b) -> true);
     }
 
     @Override
@@ -65,10 +87,10 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
         Objects.requireNonNull(payload, "Parameter 'payload' must not be null");
         HttpURLConnection connection = null;
         try {
-            final String hanaUrl = getProperties().getUrl() + getProperties().getWriteEndpoint() + "?format=json";
+            final String hanaUrl = getProperties().getUrl() + getProperties().getDataEndpoint();
             connection = (HttpURLConnection) new URL(hanaUrl).openConnection();
-            connection.setRequestMethod("POST");
             connection.setRequestProperty("Authorization", getProperties().getAuthorizationHeader());
+            connection.setRequestMethod("POST");
             connection.setDoOutput(true);
 
             connection.connect();
@@ -107,7 +129,8 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
 
         HttpURLConnection connection = null;
         try {
-            String url = getProperties().getUrl() + (query.isRaw() ? "Raw" : "") + getProperties().getDataEndpoint() + "?$format=JSON" + (query.getQueryText().startsWith("&") ? "" : "&") + query.getQueryText();
+            final String queryText = query.getQueryText();
+            String url = getProperties().getUrl() + (query.isRaw() ? "Raw" : "")  + getProperties().getDataEndpoint() + "?$format=json" + (queryText.length() > 0 && queryText.startsWith("&") ? "" : "&") + queryText;
             connection = (HttpURLConnection) new URL(url).openConnection();
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Authorization", getProperties().getAuthorizationHeader());

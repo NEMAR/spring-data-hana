@@ -18,15 +18,13 @@ package org.springframework.data.hanadb;
 
 import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 @ConfigurationProperties("spring.hanadb")
 public class HanaDBProperties
 {
   @NotEmpty
   private String url;
-
-  @NotEmpty
-  private String writeEndpoint;
 
   @NotEmpty
   private String dataEndpoint;
@@ -37,6 +35,8 @@ public class HanaDBProperties
   @NotEmpty
   private String authorizationHeader;
 
+  @NestedConfigurationProperty
+  private TrustStore trustStore;
 
   public String getUrl()
   {
@@ -56,18 +56,10 @@ public class HanaDBProperties
     this.authorizationHeader = authorizationHeader;
   }
 
-  public String getWriteEndpoint() {
-    return writeEndpoint;
-  }
-
   @Override
   public String toString()
   {
     return String.format("url: %s, authToken not included", url);
-  }
-
-  public void setWriteEndpoint(String writeEndpoint) {
-    this.writeEndpoint = writeEndpoint;
   }
 
   public String getDataEndpoint() {
@@ -84,5 +76,34 @@ public class HanaDBProperties
 
   public void setStatsEndpoint(String statsEndpoint) {
     this.statsEndpoint = statsEndpoint;
+  }
+
+  public TrustStore getTrustStore() {
+    return trustStore;
+  }
+
+  public void setTrustStore(TrustStore trustStore) {
+    this.trustStore = trustStore;
+  }
+
+  public static class TrustStore {
+    private String location;
+    private String password;
+
+    public String getLocation() {
+      return location;
+    }
+
+    public void setLocation(String location) {
+      this.location = location;
+    }
+
+    public String getPassword() {
+      return password;
+    }
+
+    public void setPassword(String password) {
+      this.password = password;
+    }
   }
 }

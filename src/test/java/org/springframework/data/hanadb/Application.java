@@ -37,7 +37,7 @@ public class Application implements CommandLineRunner {
 
         // ... and query the latest data
         final String q = "";
-        final HanaQuery query = new HanaQuery.Builder().raw(true).text("").build();
+        final HanaQuery query = new HanaQuery.Builder().raw(true).text(q).build();
         final HanaQueryResult queryResult = dbTemplate.query(query);
         logger.info(queryResult.toString());
     }

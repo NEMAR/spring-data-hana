@@ -63,9 +63,9 @@ public class HanaQueryResult {
         @SerializedName("TIME")
         private String time;
         @SerializedName("GREGORIAN_DATE")
-        private Calendar date;
+        private String date;
         @SerializedName("RECEIVED")
-        private Calendar received;
+        private String received;
         private static class Metadata {
 
             @SerializedName("type")
