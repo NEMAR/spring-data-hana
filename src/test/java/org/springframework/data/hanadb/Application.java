@@ -35,11 +35,19 @@ public class Application implements CommandLineRunner {
                 .build();
         dbTemplate.write(Arrays.asList(p1, p2));
 
-        // ... and query the latest data
-        final String q = "";
-        final HanaQuery query = new HanaQuery.Builder().raw(true).text(q).build();
-        final HanaQueryResult queryResult = dbTemplate.query(query);
-        logger.info(queryResult.toString());
+        {
+            // ... and query the latest data
+            final String q = "";
+            final HanaQuery query = new HanaQuery.Builder().raw(true).text(q).build();
+            final HanaQueryResult queryResult = dbTemplate.query(query);
+            logger.info(queryResult.toString());
+        }
+        {
+            final String q = "";
+            final HanaQuery query = new HanaQuery.Builder().raw(false).text(q).build();
+            final HanaQueryResult queryResult = dbTemplate.query(query);
+            logger.info(queryResult.toString());
+        }
     }
 
     public static void main(String[] args) {

@@ -122,8 +122,9 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
                 .addHeader("Authorization", getProperties().getAuthorizationHeader())
                 .build();
         try (Response response = client.newCall(request).execute()) {
-            LOGGER.info("Query: Status {}, Response {}", response.code(), response.body().string());
-            return gson.fromJson(response.body().string(), HanaQueryResult.class);
+            String responseBody = response.body().string();
+            LOGGER.info("Query: Status {}, Response {}", response.code(), responseBody);
+            return gson.fromJson(responseBody, HanaQueryResult.class);
         } catch (IOException e) {
             LOGGER.warn("Something went really wrong when executing a query: {}");
             LOGGER.warn("Debug information. {}", e);
