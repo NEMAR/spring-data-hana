@@ -8,11 +8,8 @@ import org.springframework.data.hanadb.data.Point;
 @Configuration
 @EnableConfigurationProperties(HanaDBProperties.class)
 public class HanaDBConfiguration {
-
     @Bean
     public HanaDBTemplate<Point> template(final HanaDBProperties properties) {
         return new DefaultHanaDBTemplate(properties);
     }
-
-
 }

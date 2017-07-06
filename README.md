@@ -23,42 +23,37 @@ The primary goal of the [Spring Data](http://projects.spring.io/spring-data/) pr
     ```yml
     spring:
       hana:
-        url: http://localhost/endpoint
+        url: http://localhost/
         authorization-header: basic authenticationToken==
+        data-endpoint: SensorData
+        stats-endpoint: SensorStats
     ```
+  When your connection is based on HTTPS it may be necessary to specify a `trust-store` under `hana` like so:
+  
+  ```yml
+      trust-store:
+        location: /path/to/java/keystore/file
+        password: securepassword
+  ```
+  
+  The information given here will be used to set the system properties `javax.net.ssl.trustStore` and
+  `javax.net.ssl.trustStorePassword`, which in turn govern how SSL certificates are validated.
+   
 
 * Create `HanaDBConnectionFactory` and `HanaDBTemplate` beans:
 
     ```java
     @Configuration
     @EnableConfigurationProperties(HanaDBProperties.class)
-    public class HanaDBConfiguration
-    {
-      @Bean
-      public HanaDBConnectionFactory connectionFactory(final HanaDBProperties properties)
-      {
-        return new HanaDBConnectionFactory(properties);
-      }
-
-      @Bean
-      public HanaDBTemplate<Point> hanaDBTemplate(final HanaDBConnectionFactory connectionFactory)
-      {
-        /*
-         * You can use your own 'PointCollectionConverter' implementation, e.g. in case
-         * you want to use your own custom measurement object.
-         */
-        return new HanaDBTemplate<>(connectionFactory, new PointConverter());
-      }
-      
-      @Bean
-      public DefaultHanaDBTemplate defaultTemplate(final HanaDBConnectionFactory connectionFactory)
-      {
-        /*
-         * If you are just dealing with Point objects from 'hanadb-java' you could
-         * also use an instance of class DefaultHanaDBTemplate.
-         */
-        return new DefaultHanaDBTemplate(connectionFactory);
-      }
+    public class HanaDBConfiguration {
+        @Bean
+        public HanaDBTemplate<Point> template(final HanaDBProperties properties) {
+            /*
+             * You can specify a custom PointConverter implementation as the second parameter, 
+             * if you want to use your own Measurement container  
+             */
+            return new DefaultHanaDBTemplate(properties);
+        }
     }
     ```
 
