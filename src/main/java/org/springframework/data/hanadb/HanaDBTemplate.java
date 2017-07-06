@@ -17,6 +17,7 @@
 package org.springframework.data.hanadb;
 
 import com.google.gson.*;
+import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.hanadb.converter.PointConverter;
@@ -27,16 +28,10 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import javax.net.ssl.HttpsURLConnection;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.lang.reflect.Type;
-import java.net.*;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperations<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(HanaDBTemplate.class);
@@ -46,7 +41,7 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
 
     public HanaDBTemplate() {
         GsonBuilder builder = new GsonBuilder();
-        builder.registerTypeAdapter(Point.class, (JsonSerializer<Point>)(Point src, Type type, JsonSerializationContext context) -> {
+        builder.registerTypeAdapter(Point.class, (JsonSerializer<Point>) (Point src, Type type, JsonSerializationContext context) -> {
             JsonObject obj = new JsonObject();
             // serialize it all to strings for reasons..
             obj.addProperty("ZEITREIHE", src.getTimeseries());
@@ -85,36 +80,26 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
     @Override
     public void write(final T payload) {
         Objects.requireNonNull(payload, "Parameter 'payload' must not be null");
-        HttpURLConnection connection = null;
-        try {
-            final String hanaUrl = getProperties().getUrl() + getProperties().getDataEndpoint();
-            connection = (HttpURLConnection) new URL(hanaUrl).openConnection();
-            connection.setRequestProperty("Authorization", getProperties().getAuthorizationHeader());
-            connection.setRequestMethod("POST");
-            connection.setDoOutput(true);
+        OkHttpClient client = new OkHttpClient();
 
-            connection.connect();
+        MediaType mediaType = MediaType.parse("application/json");
+        final String writeData = gson.toJson(converter.convert(payload));
+        LOGGER.info("Writing data to endpoint: {}", writeData);
+        RequestBody body = RequestBody.create(mediaType, writeData);
+        final String hanaUrl = getProperties().getUrl() + getProperties().getDataEndpoint();
+        Request request = new Request.Builder()
+                .url(hanaUrl)
+                .post(body)
+                .addHeader("authorization", getProperties().getAuthorizationHeader())
+                .addHeader("content-type", "application/json")
+                .addHeader("cache-control", "no-cache")
+                .build();
 
-            try (OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream())) {
-                // this call appends the json result to the output stream
-                Point data = converter.convert(payload);
-                gson.toJson(data, Point.class, out);
-                out.flush();
-            }
-
-            int responseCode = connection.getResponseCode();
-            String response;
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-                response = reader.lines().collect(Collectors.joining(System.lineSeparator()));
-            }
-            LOGGER.info("Status {}, Response {}", responseCode, response);
+        try (Response response = client.newCall(request).execute()) {
+            LOGGER.info("Status {}, Response {}", response.code(), response.body().string());
         } catch (IOException e) {
             LOGGER.warn("Something went wrong when writing payload.");
             LOGGER.warn("Debug information:", e);
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
         }
     }
 
@@ -127,32 +112,22 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
     public HanaQueryResult query(HanaQuery query) {
         Objects.requireNonNull(query, "Query must not be null");
 
-        HttpURLConnection connection = null;
-        try {
+        OkHttpClient client = new OkHttpClient();
+
             final String queryText = query.getQueryText();
-            String url = getProperties().getUrl() + (query.isRaw() ? "Raw" : "")  + getProperties().getDataEndpoint() + "?$format=json" + (queryText.length() > 0 && queryText.startsWith("&") ? "" : "&") + queryText;
-            connection = (HttpURLConnection) new URL(url).openConnection();
-            connection.setRequestMethod("GET");
-            connection.setRequestProperty("Authorization", getProperties().getAuthorizationHeader());
-
-            connection.connect();
-
-            int code = connection.getResponseCode();
-            String response;
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-                response = reader.lines().collect(Collectors.joining(System.lineSeparator()));
-            }
-            LOGGER.info("Query: Status {}, Response {}", code, response);
-            return gson.fromJson(response, HanaQueryResult.class);
-
+            String url = getProperties().getUrl() + (query.isRaw() ? "Raw" : "") + getProperties().getDataEndpoint() + "?$format=json" + (queryText.length() > 0 && queryText.startsWith("&") ? "" : "&") + queryText;
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .addHeader("Authorization", getProperties().getAuthorizationHeader())
+                .build();
+        try (Response response = client.newCall(request).execute()) {
+            LOGGER.info("Query: Status {}, Response {}", response.code(), response.body().string());
+            return gson.fromJson(response.body().string(), HanaQueryResult.class);
         } catch (IOException e) {
             LOGGER.warn("Something went really wrong when executing a query: {}");
             LOGGER.warn("Debug information. {}", e);
             return HanaQueryResult.EMPTY;
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
         }
     }
 }
