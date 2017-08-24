@@ -16,34 +16,33 @@
 
 package org.springframework.data.hanadb;
 
+import java.io.IOException;
+import java.util.List;
+
 import org.springframework.data.hanadb.query.HanaQuery;
 import org.springframework.data.hanadb.query.HanaQueryResult;
 
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+public interface HanaDBOperations<T> {
 
-public interface HanaDBOperations<T>
-{
+    /**
+     * Write a single measurement to the database.
+     *
+     * @param payload the measurement to write to
+     */
+    void write(T payload) throws IOException;
 
-  /**
-   * Write a single measurement to the database.
-   *
-   * @param payload the measurement to write to
-   */
-  void write(T payload);
+    /**
+     * Write a set of measurements to the database.
+     *
+     * @param payload the values to write to
+     */
+    void write(List<T> payload) throws IOException;
 
-  /**
-   * Write a set of measurements to the database.
-   *
-   * @param payload the values to write to
-   */
-  void write(List<T> payload);
-
-  /**
-   * Executes a query agains the database.
-   *
-   * @param query the query to execute
-   * @return a List of time series data matching the query
-   */
-  HanaQueryResult query(final HanaQuery query);
+    /**
+     * Executes a query agains the database.
+     *
+     * @param query the query to execute
+     * @return a List of time series data matching the query
+     */
+    HanaQueryResult query(final HanaQuery query);
 }
