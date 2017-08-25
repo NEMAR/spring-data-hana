@@ -47,6 +47,7 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
     private static final Logger LOGGER = LoggerFactory.getLogger(HanaDBTemplate.class);
     private final Gson gson;
     private PointConverter<T> converter;
+    private OkHttpClient okHttpClient;
 
     public HanaDBTemplate() {
         GsonBuilder builder = new GsonBuilder();
@@ -59,6 +60,11 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
             return obj;
         });
         gson = builder.create();
+
+        OkHttpClient.Builder okHBuilder = new OkHttpClient.Builder();
+        okHBuilder.readTimeout(30, TimeUnit.SECONDS);
+        okHBuilder.writeTimeout(30, TimeUnit.SECONDS);
+        okHttpClient = okHBuilder.build();
     }
 
     public HanaDBTemplate(final HanaDBProperties properties, final PointConverter<T> converter) {
@@ -88,11 +94,8 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
 
     @Override
     public void write(final T payload) throws IOException {
+
         Objects.requireNonNull(payload, "Parameter 'payload' must not be null");
-        OkHttpClient.Builder builder = new OkHttpClient.Builder();
-        builder.readTimeout(30, TimeUnit.SECONDS);
-        builder.writeTimeout(30, TimeUnit.SECONDS);
-        OkHttpClient client = builder.build();
 
         MediaType mediaType = MediaType.parse("application/json");
         final String writeData = gson.toJson(converter.convert(payload));
@@ -107,7 +110,7 @@ public class HanaDBTemplate<T> extends HanaDBAccessor implements HanaDBOperation
                 .addHeader("cache-control", "no-cache")
                 .build();
 
-        try (Response response = client.newCall(request).execute()) {
+        try (Response response = okHttpClient.newCall(request).execute()) {
             LOGGER.info("Status {}", response.code());
             if (Objects.nonNull(response.body())) {
                 LOGGER.debug("Response {}", response.body().string());
